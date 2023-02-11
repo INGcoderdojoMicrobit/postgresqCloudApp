@@ -1,20 +1,20 @@
-const {Router} = require('express');
+const { Router } = require("express");
 const router = Router();
 
-router.delete('/uczen/:id', async (req, res) => {
-    const id = req.params.id;
+router.delete("/uczen/:id", async (req, res) => {
+  const id = req.params.id;
 
-    const result = await req.db.query('delete from uczen where id = ? returning *', [id]);
+  const result = await req.db.query("delete from uczen where id = ? returning *", [id]);
 
-    res.json(result.rows[0]);
+  res.json(result.rows[0]);
 });
 
-router.get('/deleteuczen/:id', async (req, res) => {
-    const id = req.params.id;
-    
-    const result = await req.db.query('select * from uczen where id = ? returning *', [id]);
+router.get("/deleteuczen/:id", async (req, res) => {
+  const id = req.params.id;
 
-    res.json(result.rows[0]);
+  const result = await req.db.query("delete from uczen where id = ? returning *", [id]);
+
+  res.json(result.rows[0]);
 });
 
 module.exports = router;

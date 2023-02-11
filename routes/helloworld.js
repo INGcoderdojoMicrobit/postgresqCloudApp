@@ -1,4 +1,4 @@
-const {Router} = require('express');
+const { Router } = require("express");
 const router = Router();
 
 //req.db
@@ -6,8 +6,8 @@ const router = Router();
  * @param {import('express').Request} req
  * @param {import('pg').Connection} req.db
  */
-router.get('/helloworld', (req, res) => {
-    res.send('Hello World!');
+router.get("/helloworld", (req, res) => {
+  res.send("Hello World!");
 });
 
 module.exports = router;
