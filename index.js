@@ -62,7 +62,7 @@ app.use(async (req, res, next) => {
     const u = await client.query('select * from tokens where token = $1', [tokenHeader]);
     if (u.rows.length == 0) return res.status(401).send('Unauthorized');
 
-    if (u.rows[0].expires_at < new Date()) return res.status(401).send('Unauthorized');
+    if (u.rows[0].expires_at < new Date()) return res.status(401).send('Unauthorized - use proper credentials');
 
     req.userid = u.rows[0].user_id;
 
@@ -74,7 +74,7 @@ app.use(async (req, res, next) => {
   const u = await client.query('select * from tokens where token = $1', [tokenQuery]);
   if (u.rows.length == 0) return res.status(401).send('Unauthorized');
 
-  if (u.rows[0].expires_at < new Date()) return res.status(401).send('Unauthorized');
+  if (u.rows[0].expires_at < new Date()) return res.status(401).send('Unauthorized - use proper credentials');
 
   req.userid = u.rows[0].user_id;
 
@@ -116,7 +116,6 @@ app.get('/', async (req, res) => {
   console.log('Odpalone '+ `${mm}/${dd}/${yyyy} ${HH}:${MM}:${SS}`);
   res.send('Pierwsza apka chmurowa! Odpalone query: '+ `${mm}/${dd}/${yyyy} ${HH}:${MM}:${SS}`);  
 });
-
 
 const PORT = process.env.PORT || 8080;
 
