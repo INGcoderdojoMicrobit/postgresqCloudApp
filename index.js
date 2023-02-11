@@ -114,7 +114,7 @@ app.get('/', async (req, res) => {
   SS= formatData(date.getSeconds());
  
   console.log('Odpalone '+ `${mm}/${dd}/${yyyy} ${HH}:${MM}:${SS}`);
-  res.send('Pierwsza apka chmurowa! Odpalone kwery: '+ `${mm}/${dd}/${yyyy} ${HH}:${MM}:${SS}`);  
+  res.send('Pierwsza apka chmurowa! Odpalone query: '+ `${mm}/${dd}/${yyyy} ${HH}:${MM}:${SS}`);  
 });
 
 
