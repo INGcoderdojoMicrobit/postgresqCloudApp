@@ -5,10 +5,13 @@
     "prettier": "npx --yes -p prettier@latest -p pretty-quick pretty-quick"
   },
   "dependencies": {
+    "@google-cloud/logging": "^10.4.0",
+    "@google-cloud/logging-winston": "^5.3.0",
     "body-parser": "^1.20.1",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
-    "pg": "^8.9.0"
+    "pg": "^8.9.0",
+    "winston": "^3.8.2"
   },
   "devDependencies": {
     "prettier": "^2.8.4",

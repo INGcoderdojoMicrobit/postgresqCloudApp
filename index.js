@@ -5,6 +5,29 @@ const bodyParser = require("body-parser");
 require("dotenv").config();
 const pg = require("pg");
 
+const winston = require('winston');
+
+// Imports the Google Cloud client library for Winston
+const {LoggingWinston} = require('@google-cloud/logging-winston');
+
+const loggingWinston = new LoggingWinston();
+
+// Create a Winston logger that streams to Cloud Logging
+// Logs will be written to: "projects/YOUR_PROJECT_ID/logs/winston_log"
+const logger = winston.createLogger({
+  level: 'info',
+  transports: [
+    new winston.transports.Console(),
+    // Add Cloud Logging
+    loggingWinston,
+  ],
+});
+
+// Writes some log entries
+//logger.error('warp nacelles offline');
+logger.info('Odpalam logowanie');
+
+
 const client = new pg.Client({
   user: process.env.DATABASE_USER,
   password: process.env.DATABASE_PASSWORD,
@@ -12,8 +35,14 @@ const client = new pg.Client({
   host: process.env.DATABASE_HOST
 });
 
+if (process.env.INSTANCE_CONNECTION_NAME) {
+  client.socketPath = `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`;
+}
+
 client.connect().then(() => {
-  console.log("connected to database");
+  logger.info("Podpinam sie do bazy");
+  console.log("Connected to database: " + `${client.host}-->${client.database}/${client.user}:${client.port} chmurowo? ${client.socketPath}`);
+  logger.info("Connected to database: " + `${client.host}-->${client.database}/${client.user}:${client.port} chmurowo? ${client.socketPath}`);
 });
 
 app.use(bodyParser.json());
@@ -52,29 +81,34 @@ const formatHour = (input) => {
 // ?token=1234
 app.use(async (req, res, next) => {
   req.db = client;
-
+  
   const tokenHeader = req.header.Authorization;
   const tokenQuery = req.query.token;
 
+  logger.info("Szukam tokena w bazie...");
+  
   if (tokenHeader) {
+    logger.info("Szukam: "+ `${tokenHeader}`);
     const u = await client.query("select * from tokens where token = $1", [tokenHeader]);
     if (u.rows.length == 0) return res.status(401).send("Unauthorized");
 
     if (u.rows[0].expires_at < new Date()) return res.status(401).send("Unauthorized - use proper credentials");
 
     req.userid = u.rows[0].user_id;
+    logger.info("znaleziony: "+ `${u.rows[0].user_id}`);
 
     return next();
   }
 
   if (!tokenQuery) return res.status(401).send("Unauthorized");
-
+  logger.info("Szukam: "+ `${tokenQuery}`);
   const u = await client.query("select * from tokens where token = $1", [tokenQuery]);
   if (u.rows.length == 0) return res.status(401).send("Unauthorized");
 
   if (u.rows[0].expires_at < new Date()) return res.status(401).send("Unauthorized - use proper credentials");
 
   req.userid = u.rows[0].user_id;
+  logger.info("znaleziony: "+ `${u.rows[0].user_id}`);
 
   return next();
 });
@@ -95,6 +129,7 @@ fs.readdirSync("./routes").forEach((f) => {
 });
 
 app.get("/secret", async (req, res) => {
+  logger.info("Sekcja ukryta!");
   console.log("Accessing the secret section ...");
   res.send("secret - OK");
 });
@@ -109,7 +144,7 @@ app.get("/", async (req, res) => {
   MM = formatData(date.getMinutes());
   SS = formatData(date.getSeconds());
 
-  console.log("Odpalone " + `${mm}/${dd}/${yyyy} ${HH}:${MM}:${SS}`);
+  console.log("Odpalone: " + `${mm}/${dd}/${yyyy} ${HH}:${MM}:${SS}`);
   res.send("Pierwsza apka chmurowa! Odpalone query: " + `${mm}/${dd}/${yyyy} ${HH}:${MM}:${SS}`);
 });
 
