@@ -33,7 +33,7 @@ router.get("/postuczen/:id", async (req, res) => {
     return res.status(400).send("Nie podano wszystkich danych");
   }
 
-  if (teacher !== 1 && teacher !== 0) return res.status(400).send("Teacher musi mieć wartość 0 lub 1");
+  if (teacher != 1 && teacher != 0) return res.status(400).send("Teacher musi mieć wartość 0 lub 1");
 
   const result = await req.db.query("update uczen set imie = $1, nazwisko = $2, is_teacher = $3 where id = $4 returning *", [
     imie,

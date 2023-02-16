@@ -39,6 +39,8 @@ if (process.env.INSTANCE_CONNECTION_NAME) {
   client.socketPath = `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`;
 }
 
+logger.info("Podpinam sie do bazy: " + `${client.host}-->${client.database}/${client.user}:${client.port} chmurowo? ${client.socketPath}`);
+
 client.connect().then(() => {
   logger.info("Podpinam sie do bazy");
   console.log("Connected to database: " + `${client.host}-->${client.database}/${client.user}:${client.port} chmurowo? ${client.socketPath}`);
