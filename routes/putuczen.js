@@ -6,7 +6,7 @@ router.put("/uczen", async (req, res) => {
 
   if (!imie || !nazwisko || !teacher) return res.status(400).send("Nie podano imienia lub nazwiska");
 
-  if (teacher !== 1 && teacher !== 0) return res.status(400).send("Teacher musi mieć wartość 0 lub 1");
+  if (teacher != 1 && teacher != 0) return res.status(400).send("Teacher musi mieć wartość 0 lub 1");
 
   const { rows } = await req.db.query("insert into uczen (imie, nazwisko, is_teacher) values ($1, $2, $3) returning *", [
     imie,
@@ -21,12 +21,13 @@ router.get("/putuczen", async (req, res) => {
   const { imie, nazwisko, teacher } = req.query;
 
   if (!imie || !nazwisko || !teacher) return res.status(400).send("Nie podano imienia lub nazwiska");
-
-  if (teacher !== 1 && teacher !== 0) return res.status(400).send("Teacher musi mieć wartość 0 lub 1");
+  req.log.info("w GET putuczen Odczytałem z req: " + `imie:${imie} nazwisko:${nazwisko} czy_nauczyciel:${teacher}`);
+  if (teacher != 1 && teacher != 0) return res.status(400).send("Teacher musi mieć wartość 0 lub 1");
 
   const { rows } = await req.db.query("insert into uczen (imie, nazwisko, is_teacher) values ($1, $2, $3) returning *", [
     imie,
-    nazwisko.teacher == 1
+    nazwisko,
+    teacher == 1
   ]);
 
   res.status(200).send(rows[0]);
