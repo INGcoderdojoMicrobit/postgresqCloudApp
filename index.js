@@ -81,6 +81,7 @@ const formatHour = (input) => {
 // ?token=1234
 app.use(async (req, res, next) => {
   req.db = client;
+  req.log = logger;
   
   const tokenHeader = req.header.Authorization;
   const tokenQuery = req.query.token;
