@@ -4,7 +4,7 @@ const fs = require("fs");
 const bodyParser = require("body-parser");
 require("dotenv").config();
 const pg = require("pg");
-
+const pc = require("@prisma/client");
 const winston = require('winston');
 
 // Imports the Google Cloud client library for Winston
@@ -39,6 +39,13 @@ if (process.env.INSTANCE_CONNECTION_NAME) {
   client.socketPath = `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`;
 }
 
+if (process.env.DATABASE_URL) {
+    logger.info("Taki url do bazy danych mam: "+`${process.env.DATABASE_URL}`);
+} else
+{   
+    logger.info("Nie mam zdefiniowanego URL!");
+}
+  
 logger.info("Podpinam sie do bazy: " + `${client.host}-->${client.database}/${client.user}:${client.port} chmurowo? ${client.socketPath}`);
 
 client.connect().then(() => {
