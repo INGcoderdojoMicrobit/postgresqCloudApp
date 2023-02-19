@@ -89,6 +89,7 @@ const formatHour = (input) => {
 // Authorization token
 // ?token=1234
 app.use(async (req, res, next) => {
+  res.header("X-Powered-By", "NothingSpecialTbh");
   req.db = client;
   req.log = logger;
   
