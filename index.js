@@ -4,7 +4,8 @@ const fs = require("fs");
 const bodyParser = require("body-parser");
 require("dotenv").config();
 const pg = require("pg");
-const pc = require("@prisma/client");
+const { PrismaClient }= require("@prisma/client");
+
 const winston = require('winston');
 
 // Imports the Google Cloud client library for Winston
@@ -27,6 +28,11 @@ const logger = winston.createLogger({
 //logger.error('warp nacelles offline');
 logger.info('Odpalam logowanie');
 
+logger.info('Odpalam prisma new');
+const prisma = new PrismaClient();
+logger.info('Odpaliłem prisma new');
+
+
 
 const client = new pg.Client({
   user: process.env.DATABASE_USER,
@@ -46,12 +52,12 @@ if (process.env.DATABASE_URL) {
     logger.info("Nie mam zdefiniowanego URL!");
 }
   
-logger.info("Podpinam sie do bazy: " + `${client.host}-->${client.database}/${client.user}:${client.port} chmurowo? ${client.socketPath}`);
+logger.info("Podpinam sie do bazy: " + `${client.host}-->${client.database}/${client.user}:${client.port} chmurowo? ${client.socketPath}, URL= ${process.env.DATABASE_URL}`);
 
 client.connect().then(() => {
   logger.info("Podpinam sie do bazy");
   console.log("Connected to database: " + `${client.host}-->${client.database}/${client.user}:${client.port} chmurowo? ${client.socketPath}`);
-  logger.info("Connected to database: " + `${client.host}-->${client.database}/${client.user}:${client.port} chmurowo? ${client.socketPath}`);
+  logger.info("Connected to database: " + `${client.host}-->${client.database}/${client.user}:${client.port} chmurowo? ${client.socketPath}, URL = ${process.env.DATABASE_URL}`);
 });
 
 app.use(bodyParser.json());
@@ -90,6 +96,7 @@ const formatHour = (input) => {
 // ?token=1234
 app.use(async (req, res, next) => {
   req.db = client;
+  req.pcdb = prisma;
   req.log = logger;
   
   const tokenHeader = req.header.Authorization;
@@ -100,9 +107,17 @@ app.use(async (req, res, next) => {
   if (tokenHeader) {
     logger.info("Szukam: "+ `${tokenHeader}`);
     const u = await client.query("select * from tokens where token = $1", [tokenHeader]);
-    if (u.rows.length == 0) return res.status(401).send("Unauthorized");
+    if (u.rows.length == 0) 
+    {
+        logger.info("nie znalazłem takiego tokena: " + `${tokenHeader}, error Unauthorized!`);
+        return res.status(401).send("Unauthorized");
+    }
 
-    if (u.rows[0].expires_at < new Date()) return res.status(401).send("Unauthorized - use proper credentials");
+    if (u.rows[0].expires_at < new Date()) 
+    {
+        logger.info("Token jest: " + `${tokenHeader}, ale niestety nieważny - error Unauthorized - podaj poprawne dane!`);
+        return res.status(401).send("Unauthorized - use proper credentials");
+    }
 
     req.userid = u.rows[0].user_id;
     logger.info("znaleziony: "+ `${u.rows[0].user_id}`);
@@ -110,15 +125,54 @@ app.use(async (req, res, next) => {
     return next();
   }
 
-  if (!tokenQuery) return res.status(401).send("Unauthorized");
+  if (!tokenQuery)
+  {
+    return res.status(401).send("Unauthorized");
+  } 
   logger.info("Szukam: "+ `${tokenQuery}`);
+  
+  const users = await prisma.tokens.findMany({
+    where: {
+      token: tokenQuery,
+    },
+  })
+
+  if (users.length == 0)
+  {
+    logger.info("PRISMA -> nie znalazłem takiego tokena: " + `${tokenQuery}, error Unauthorized!`);
+    return res.status(401).send("PRISMA - Unauthorized");
+  }
+  else
+  {
+    logger.info("PRISMA");
+    logger.info(users);
+  }
+  
   const u = await client.query("select * from tokens where token = $1", [tokenQuery]);
-  if (u.rows.length == 0) return res.status(401).send("Unauthorized");
+  if (u.rows.length == 0)
+  {
+    logger.info("nie znalazłem takiego tokena: " + `${tokenQuery}, error Unauthorized!`);
+    return res.status(401).send("Unauthorized - wrong token");
+  }
 
-  if (u.rows[0].expires_at < new Date()) return res.status(401).send("Unauthorized - use proper credentials");
+  
+  if (users.expires_at < new Date()) 
+  {
+    logger.info("PRISMA Token jest: " + `${tokenQuery}, ale niestety nieważny - error Unauthorized - podaj poprawne dane!`);
+    return res.status(401).send("PRISMA Unauthorized - use proper credentials");  
+  }
+  
+  if (u.rows[0].expires_at < new Date()) 
+  {
+    logger.info("Token jest: " + `${tokenQuery}, ale niestety nieważny - error Unauthorized - podaj poprawne dane!`);
+    return res.status(401).send("Unauthorized - use proper credentials");  
+  }
+  
 
-  req.userid = u.rows[0].user_id;
+  //req.userid = u.rows[0].user_id;
+  req.userid = users[0].user_id; //PRISMA
   logger.info("znaleziony: "+ `${u.rows[0].user_id}`);
+  logger.info("PRISMA znaleziony: "+ `${users[0].user_id}`);
 
   return next();
 });
