@@ -22,3 +22,10 @@ model tokens {
   created_at          DateTime @db.Timestamptz(6)
   expires_at          DateTime @db.Timestamptz(6)
 }
+
+model uczen {
+    imie              String   @db.Text
+    nazwisko          String   @db.Text
+    id                BigInt   @id @default(autoincrement())
+    is_teacher        Boolean  @default(false)
+}

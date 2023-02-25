@@ -12,7 +12,6 @@ const winston = require('winston');
 const {LoggingWinston} = require('@google-cloud/logging-winston');
 
 const loggingWinston = new LoggingWinston();
-
 // Create a Winston logger that streams to Cloud Logging
 // Logs will be written to: "projects/YOUR_PROJECT_ID/logs/winston_log"
 const logger = winston.createLogger({
@@ -23,6 +22,8 @@ const logger = winston.createLogger({
     loggingWinston,
   ],
 });
+
+BigInt.prototype.toJSON = function() { return this.toString() }
 
 // Writes some log entries
 //logger.error('warp nacelles offline');
@@ -131,13 +132,16 @@ app.use(async (req, res, next) => {
   } 
   logger.info("Szukam: "+ `${tokenQuery}`);
   
-  const users = await prisma.tokens.findMany({
+  const tokeny = await prisma.tokens.findMany({
     where: {
       token: tokenQuery,
     },
+    orderBy:[{
+        expires_at: 'desc',
+    }]
   })
 
-  if (users.length == 0)
+  if (tokeny.length == 0)
   {
     logger.info("PRISMA -> nie znalazłem takiego tokena: " + `${tokenQuery}, error Unauthorized!`);
     return res.status(401).send("PRISMA - Unauthorized");
@@ -145,10 +149,10 @@ app.use(async (req, res, next) => {
   else
   {
     logger.info("PRISMA");
-    logger.info(users);
+    logger.info(tokeny);
   }
   
-  const u = await client.query("select * from tokens where token = $1", [tokenQuery]);
+  /*const u = await client.query("select * from tokens where token = $1", [tokenQuery]);
   if (u.rows.length == 0)
   {
     logger.info("nie znalazłem takiego tokena: " + `${tokenQuery}, error Unauthorized!`);
@@ -156,34 +160,51 @@ app.use(async (req, res, next) => {
   }
 
   
-  if (users.expires_at < new Date()) 
+  if (users[0].expires_at < new Date()) 
   {
     logger.info("PRISMA Token jest: " + `${tokenQuery}, ale niestety nieważny - error Unauthorized - podaj poprawne dane!`);
     return res.status(401).send("PRISMA Unauthorized - use proper credentials");  
   }
-  
-  if (u.rows[0].expires_at < new Date()) 
+  */
+  /*if (u.rows[0].expires_at < new Date()) 
   {
     logger.info("Token jest: " + `${tokenQuery}, ale niestety nieważny - error Unauthorized - podaj poprawne dane!`);
     return res.status(401).send("Unauthorized - use proper credentials");  
   }
   
-
+*/
   //req.userid = u.rows[0].user_id;
-  req.userid = users[0].user_id; //PRISMA
-  logger.info("znaleziony: "+ `${u.rows[0].user_id}`);
-  logger.info("PRISMA znaleziony: "+ `${users[0].user_id}`);
+  req.userid = tokeny[0].user_id; //PRISMA
+  //logger.info("znaleziony: "+ `${u.rows[0].user_id}`);
+  logger.info("PRISMA znaleziony: "+ `${tokeny[0].user_id}`);
 
   return next();
 });
 
 // info kto używa aplikacji
 app.use(async (req, res, next) => {
-  const id = req.userid;
+  //const id = req.userid;
 
-  const u = await client.query("select * from users where id = $1", [id]);
+  //const u = await client.query("select * from users where id = $1", [id]);
+  
+  const users = await prisma.users.findMany({
+    where: {
+      id: req.userid,
+    },
+  })
 
-  console.log(u.rows[0]);
+  if (users.length == 0)
+  {
+    logger.info("PRISMA -> nie znalazłem takiego użytkownika: " + `${req.userid}, error Unauthorized!`);
+    return res.status(401).send("PRISMA - Unauthorized - nie ma takiego użytkownika");
+  }
+  else
+  {
+    logger.info("PRISMA - jaki to user:");
+    logger.info(users);
+  }
+
+  //console.log(u.rows[0]);
 
   return next();
 });
