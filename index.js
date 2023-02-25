@@ -9,18 +9,18 @@ const { PrismaClient }= require("@prisma/client");
 const winston = require('winston');
 
 // Imports the Google Cloud client library for Winston
-const {LoggingWinston} = require('@google-cloud/logging-winston');
+const { LoggingWinston } = require("@google-cloud/logging-winston");
 
 const loggingWinston = new LoggingWinston();
 // Create a Winston logger that streams to Cloud Logging
 // Logs will be written to: "projects/YOUR_PROJECT_ID/logs/winston_log"
 const logger = winston.createLogger({
-  level: 'info',
+  level: "info",
   transports: [
     new winston.transports.Console(),
     // Add Cloud Logging
-    loggingWinston,
-  ],
+    loggingWinston
+  ]
 });
 
 BigInt.prototype.toJSON = function() { return this.toString() }
@@ -47,19 +47,25 @@ if (process.env.INSTANCE_CONNECTION_NAME) {
 }
 
 if (process.env.DATABASE_URL) {
-    logger.info("Taki url do bazy danych mam: "+`${process.env.DATABASE_URL}`);
-} else
-{   
-    logger.info("Nie mam zdefiniowanego URL!");
+  logger.info("Taki url do bazy danych mam: " + `${process.env.DATABASE_URL}`);
+} else {
+  logger.info("Nie mam zdefiniowanego URL!");
 }
-  
-logger.info("Podpinam sie do bazy: " + `${client.host}-->${client.database}/${client.user}:${client.port} chmurowo? ${client.socketPath}, URL= ${process.env.DATABASE_URL}`);
 
-client.connect().then(() => {
-  logger.info("Podpinam sie do bazy");
-  console.log("Connected to database: " + `${client.host}-->${client.database}/${client.user}:${client.port} chmurowo? ${client.socketPath}`);
-  logger.info("Connected to database: " + `${client.host}-->${client.database}/${client.user}:${client.port} chmurowo? ${client.socketPath}, URL = ${process.env.DATABASE_URL}`);
-});
+logger.info("Podpinam sie do bazy: " + `${client.host}-->${client.database}/${client.user}:${client.port} chmurowo? ${client.socketPath}`);
+
+client
+  .connect()
+  .then(() => {
+    logger.info("Podpinam sie do bazy");
+    console.log(
+      "Connected to database: " + `${client.host}-->${client.database}/${client.user}:${client.port} chmurowo? ${client.socketPath}`
+    );
+    logger.info(
+      "Connected to database: " + `${client.host}-->${client.database}/${client.user}:${client.port} chmurowo? ${client.socketPath}`
+    );
+  })
+  .catch(console.error);
 
 app.use(bodyParser.json());
 app.use(
@@ -96,17 +102,18 @@ const formatHour = (input) => {
 // Authorization token
 // ?token=1234
 app.use(async (req, res, next) => {
+  res.header("X-Powered-By", "NothingSpecialTbh");
   req.db = client;
   req.pcdb = prisma;
   req.log = logger;
-  
+
   const tokenHeader = req.header.Authorization;
   const tokenQuery = req.query.token;
 
   logger.info("Szukam tokena w bazie...");
-  
+
   if (tokenHeader) {
-    logger.info("Szukam: "+ `${tokenHeader}`);
+    logger.info("Szukam: " + `${tokenHeader}`);
     const u = await client.query("select * from tokens where token = $1", [tokenHeader]);
     if (u.rows.length == 0) 
     {
@@ -121,7 +128,7 @@ app.use(async (req, res, next) => {
     }
 
     req.userid = u.rows[0].user_id;
-    logger.info("znaleziony: "+ `${u.rows[0].user_id}`);
+    logger.info("znaleziony: " + `${u.rows[0].user_id}`);
 
     return next();
   }
