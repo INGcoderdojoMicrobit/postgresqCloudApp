@@ -1,9 +1,9 @@
 # postgresqCloudApp
 pierwsza apka chmurowa z baza danych
 
-mkdir kolkoikrzyzyk
-cd kolkoikrzyzyk
-gsutil rsync -r gs://sample-code-repo/kolkoikrzyzyk .
+mkdir kolkoikrzyzyk\n
+cd kolkoikrzyzyk\n
+gsutil rsync -r gs://sample-code-repo/kolkoikrzyzyk . \n
 
 
 cd kolkoikrzyzyk
